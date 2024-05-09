@@ -1,35 +1,64 @@
-import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../contexts/AuthProvider";
-import axios from "axios";
+import { useEffect, useState } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import UseAxiosSecure from "../hooks/UseAxiosSecure";
+import useAuth from "../hooks/useAuth";
+import Spinner from "../components/Spinner";
 import toast from "react-hot-toast";
-import { useQuery } from "@tanstack/react-query";
 
 const BidRequests = () => {
-  const { user } = useContext(AuthContext);
-  const [bidrequests, setBidrequests] = useState([]);
+  const { user } = useAuth();
+  const axiosSecure = UseAxiosSecure();
 
+  const queryClient = useQueryClient();
+  const {
+    data: bidrequests = [],
+    isLoading,
+    refetch,
+    isError,
+    error,
+  } = useQuery({
+    queryFn: () => getData(),
+    queryKey: ["bidrequests", user?.email], //User email is the dependency
+  });
 
+  // const [bidrequests, setBidrequests] = useState([]);
 
-  useEffect(() => {
-    getData();
-  }, [user]);
+  // useEffect(() => {
+  //   getData();
+  // }, [user]);
+
+  const { mutateAsync } = useMutation({
+    mutationFn: async ({ id, status }) => {
+      const { data } = await axiosSecure.patch(`/bidjobs/${id}`, { status });
+    },
+    onSuccess: () => {
+      toast.success("Status Updated");
+      // refetch();
+      // Anotehr way
+      queryClient.invalidateQueries({
+        queryKey: ["bidrequests"],
+      });
+    },
+  });
   const getData = async () => {
-    const { data } = await axios(
-      `${import.meta.env.VITE_API_URL}/bidrequests/${user.email}`
-    );
-    setBidrequests(data);
+    const { data } = await axiosSecure(`/bidrequests/${user.email}`);
+    // setBidrequests(data);
+    return data;
   };
   const handleStatus = async (id, previousStatus, status) => {
     if (previousStatus == status) {
       return;
     }
-    const { data } = await axios.patch(
-      `${import.meta.env.VITE_API_URL}/bidjobs/${id}`,
-      { status }
-    );
-    
-    getData();
+
+    await mutateAsync({ id, status });
   };
+  if (isLoading) {
+    return <Spinner></Spinner>;
+  }
+  if (isError || error) {
+    toast.error(error.message);
+  }
   return (
     <section className="container px-4 mx-auto pt-12 md:my-10 my-5">
       <div className="flex items-center gap-x-3">
@@ -186,7 +215,7 @@ const BidRequests = () => {
                             onClick={() =>
                               handleStatus(bid._id, bid.status, "Rejected")
                             }
-                            disabled={bid.status=="Complete"}
+                            disabled={bid.status == "Complete"}
                             className="text-gray-500 transition-colors duration-200   hover:text-yellow-500 focus:outline-none"
                           >
                             <svg

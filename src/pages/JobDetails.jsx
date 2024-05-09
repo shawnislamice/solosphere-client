@@ -7,12 +7,14 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import toast from "react-hot-toast";
+import UseAxiosSecure from "../hooks/UseAxiosSecure";
 const JobDetails = () => {
   const job = useLoaderData();
   const navigate=useNavigate()
   console.log(job);
   const [startDate, setStartDate] = useState(new Date());
   const { user } = useContext(AuthContext);
+  const axiosSecure=UseAxiosSecure()
   const {
     _id,
     buyer,
@@ -30,7 +32,7 @@ const JobDetails = () => {
     reset,
     formState: { errors },
   } = useForm();
-  const onSubmit = (data) => {
+  const onSubmit = async(data) => {
     if (parseFloat(min_price) > parseFloat(data.price)) {
       toast.error(
         "Minimum price should be equal or greater than minimum price"
@@ -57,12 +59,13 @@ const JobDetails = () => {
     };
     console.log(bidData);
     try {
-      axios.post(`${import.meta.env.VITE_API_URL}/bidjobs`, bidData);
+      await axiosSecure.post(`/bidjobs`, bidData);
       toast.success("Bid Placed Successful");
       navigate('/mybids')
       reset();
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response.data);
+      reset()
     }
   };
   return (

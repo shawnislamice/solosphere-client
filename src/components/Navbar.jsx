@@ -22,6 +22,14 @@ const Navbar = () => {
               Home
             </NavLink>
           </li>
+          <li>
+            <NavLink
+              className={({ isActive }) => (isActive ? "bg-red-400" : "")}
+              to="/alljobs"
+            >
+              All Jobs
+            </NavLink>
+          </li>
 
           {!user && (
             <li>

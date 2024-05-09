@@ -1,23 +1,24 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../contexts/AuthProvider";
-import axios from "axios";
+
+import UseAxiosSecure from "../hooks/UseAxiosSecure";
 
 const MyBids = () => {
   const { user } = useContext(AuthContext);
   const [bids, setBids] = useState([]);
-
+const axiosSecure=UseAxiosSecure()
   useEffect(() => {
     getData();
   }, [user]);
   const getData = async () => {
-    const { data } = await axios(
-      `${import.meta.env.VITE_API_URL}/bidjobs/${user.email}`
+    const { data } = await axiosSecure(
+      `/bidjobs/${user.email}`
     );
     setBids(data);
   };
  const handleStatus = async (id,status) => {
-   const { data } = await axios.patch(
-     `${import.meta.env.VITE_API_URL}/bidjobs/${id}`,
+   const { data } = await axiosSecure.patch(
+     `/bidjobs/${id}`,
      { status }
    );
    getData();
